@@ -41,6 +41,9 @@ pub struct ComObject {
 
 #[allow(unused)]
 impl ComObject {
+    /// COMオブジェクトを新規に作成します
+    ///
+    /// ProgIDかCLSID文字列 ( {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} 形式) を渡す
     pub fn new(id: &str) -> core::Result<Self> {
         unsafe {
             let lpsz = HSTRING::from(id);
@@ -52,6 +55,9 @@ impl ComObject {
             Ok(Self { disp })
         }
     }
+    /// 起動中のExcelを捕まえるなどで使う
+    ///
+    /// ProgIDかCLSID文字列を渡す
     pub fn get(id: &str) -> core::Result<Option<Self>> {
         unsafe {
             let lpsz = HSTRING::from(id);
@@ -95,6 +101,10 @@ impl ComObject {
             Ok(result)
         }
     }
+    /// プロパティの値を得ます
+    ///
+    /// 値を得たいプロパティの名前を渡してください
+    /// パラメータ付きプロパティの場合はパラメータを示すVARIANTを渡します
     pub fn get_property(&self, prop: &str, param: Option<VARIANT>) -> core::Result<VARIANT> {
         let dispidmember = self.get_id_from_name(prop)?;
         let mut pdispparams = DISPPARAMS::default();
@@ -107,6 +117,9 @@ impl ComObject {
         pdispparams.rgvarg = args.as_mut_ptr();
         self.invoke(dispidmember, &pdispparams, DISPATCH_PROPERTYGET)
     }
+    /// プロパティに値をセットします
+    ///
+    /// プロパティ名と必要ならばそのパラメータとセットする値を渡します
     pub fn set_property(&self, prop: &str, param: Option<VARIANT>, value: VARIANT) -> core::Result<()> {
         let dispidmember = self.get_id_from_name(prop)?;
         let mut pdispparams = DISPPARAMS::default();
@@ -123,6 +136,9 @@ impl ComObject {
         self.invoke(dispidmember, &pdispparams, DISPATCH_PROPERTYPUT)?;
         Ok(())
     }
+    /// メソッドを実行します
+    ///
+    /// メソッド名とメソッドに渡す引数を渡します
     pub fn invoke_method(&self, method: &str, mut args: Vec<VARIANT>) -> core::Result<VARIANT> {
         let dispidmember = self.get_id_from_name(method)?;
         let mut pdispparams = DISPPARAMS::default();
@@ -134,14 +150,24 @@ impl ComObject {
 }
 
 pub trait VariantExt {
+    /// VT_NULLなVARIANTを作る
     fn null() -> VARIANT;
-    fn by_ref(variant: *mut VARIANT) -> VARIANT;
+    /// VT_BYREF|VT_VARIANTなVARIANTを作る、参照渡し用
+    /// 引数は参照先となるVARIANT
+    fn by_ref(var_val: *mut VARIANT) -> VARIANT;
+    /// VT_I4を作る
     fn from_i32(n: i32) -> VARIANT;
+    /// VT_BSTRを作る
     fn from_str(s: &str) -> VARIANT;
+    /// VT_BOOLを作る
     fn from_bool(b: bool) -> VARIANT;
+    /// VT_ARRAY|VT_VARIANTを作る
     fn from_safearray(psa: *mut SAFEARRAY) -> VARIANT;
+    /// VARIANTをi32にする
     fn to_i32(&self) -> core::Result<i32>;
+    /// VARIANTをStringにする
     fn to_string(&self) -> core::Result<String>;
+    /// VARIANTをboolにする
     fn to_bool(&self) -> core::Result<bool>;
 }
 
